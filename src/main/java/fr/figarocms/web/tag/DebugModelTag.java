@@ -11,9 +11,11 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -142,7 +144,9 @@ public class DebugModelTag extends TagSupport {
                 debugModel.put(SESSION_MODEL_KEY, debugSession);
                 debugModel.put(APPLICATION_MODEL_KEY, debugApplication);
                 ObjectMapper objectMapper = new ObjectMapper();
-                objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS,false);
+                objectMapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(
+                        JsonAutoDetect.Visibility.ANY));
+                objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
                 objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
                 objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
                 String debugModelAsJSON = null;
