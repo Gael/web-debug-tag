@@ -1,9 +1,5 @@
 package fr.figarocms.web.tag;
 
-import javax.servlet.http.HttpSession;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-
 import org.junit.Before;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -13,11 +9,14 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockPageContext;
 import org.springframework.mock.web.MockServletContext;
 
+import javax.servlet.http.HttpSession;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+
 public abstract class AbstractDebugModelTagForSystemProperty {
 
-@Spy
+    @Spy
     protected DebugModelTag mockDebugModelTag = new DebugModelTag();
-
 
 
     protected MockHttpServletResponse response;
@@ -34,7 +33,7 @@ public abstract class AbstractDebugModelTagForSystemProperty {
     protected static Field field = null;
 
 
-     static {
+    static {
         try {
             field = DebugModelTag.class.getDeclaredField("DEBUG_FLAG");
         } catch (NoSuchFieldException e) {
@@ -42,7 +41,7 @@ public abstract class AbstractDebugModelTagForSystemProperty {
         }
     }
 
-@Before
+    @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         response = new MockHttpServletResponse();
@@ -51,13 +50,13 @@ public abstract class AbstractDebugModelTagForSystemProperty {
         servletContext = new MockServletContext();
         pageContext = new MockPageContext(servletContext, request, response);
         mockDebugModelTag.setPageContext(pageContext);
-}
+    }
 
-      public void overrideConstantField(final Field field,Object value) throws NoSuchFieldException, IllegalAccessException {
+    public void overrideConstantField(final Field field, Object value) throws NoSuchFieldException, IllegalAccessException {
         field.setAccessible(true);
         Field modifiersField = Field.class.getDeclaredField("modifiers");
         modifiersField.setAccessible(true);
         modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-        field.set(null,value );
+        field.set(null, value);
     }
 }
