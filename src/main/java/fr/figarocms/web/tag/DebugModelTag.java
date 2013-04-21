@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class DebugModelTag extends TagSupport {
     private static final long serialVersionUID = 4611181048692549740L;
@@ -31,7 +32,7 @@ public class DebugModelTag extends TagSupport {
     public static final String SCRIPT_END = "</script>";
 
     /**
-     * Property -Ddebug.jsp = true à mettre dans les  variables de la JVM.
+     * Property -Ddebug.jsp = true à  to set in JVM variables at launch.
      */
     public static final String DEBUG_JSP_FLAG = "debug.jsp";
 
@@ -45,7 +46,7 @@ public class DebugModelTag extends TagSupport {
 
     public static final String STRING_CLASS_NAME = "java.lang.String";
 
-    private static final String WEBDEBUG_EXCLUDES = "webdebug.excludes";
+    public static final String WEBDEBUG_EXCLUDES = "webdebug.excludes";
 
     private static final String PAGE_REQUEST_KEY = "page";
 
@@ -71,11 +72,9 @@ public class DebugModelTag extends TagSupport {
 
     private Map<String, Object> debugModel = Maps.newHashMap();
 
-    private Map<String, Object> debugSession = Maps.newHashMap();
-    private Map<String, Object> debugRequest = Maps.newHashMap();
-
     private Map<String, Object> debugPage = Maps.newHashMap();
-
+    private Map<String, Object> debugRequest = Maps.newHashMap();
+    private Map<String, Object> debugSession = Maps.newHashMap();
     private Map<String, Object> debugApplication = Maps.newHashMap();
 
 
@@ -96,19 +95,20 @@ public class DebugModelTag extends TagSupport {
 
         try {
             out.println(SCRIPT_TYPE_TEXT_JAVASCRIPT_START);
+            String packagesToExclude = pageContext.getServletContext().getInitParameter(WEBDEBUG_EXCLUDES);
+            List<String> tokenToFilter = Lists.newArrayList();
+            if (packagesToExclude != null) {
+                tokenToFilter = Arrays.asList(packagesToExclude.split(EXCLUDE_PACKAGE_SEPARATOR));
+            }
+
             for (Integer scope : SCOPES) {
                 Enumeration attributeNames = pageContext.getAttributeNamesInScope(scope);
 
                 while (attributeNames != null && attributeNames.hasMoreElements()) {
                     String element = attributeNames.nextElement().toString();
                     Object attribute = null;
-                    String packagesToExclude = pageContext.getServletContext().getInitParameter(WEBDEBUG_EXCLUDES);
-                    List<String> tokenToFilter = Lists.newArrayList();
-                    if (packagesToExclude != null) {
-                        tokenToFilter = Arrays.asList(packagesToExclude.split(EXCLUDE_PACKAGE_SEPARATOR));
-                    }
 
-                    if (element != null && !ignoredPackage(element, tokenToFilter)) {
+                    if (element != null) {
 
                         if (scope == PageContext.PAGE_SCOPE) {
                             attribute = pageContext.getAttribute(element);
@@ -142,7 +142,7 @@ public class DebugModelTag extends TagSupport {
             debugModel.put(REQUEST_MODEL_KEY, debugRequest);
             debugModel.put(SESSION_MODEL_KEY, debugSession);
             debugModel.put(APPLICATION_MODEL_KEY, debugApplication);
-            ObjectMapper objectMapper = getObjectMapper();
+            ObjectMapper objectMapper = getObjectMapper(tokenToFilter);
             String debugModelAsJSON = null;
             try {
                 debugModelAsJSON = objectMapper.writeValueAsString(debugModel);
@@ -156,19 +156,32 @@ public class DebugModelTag extends TagSupport {
 
     }
 
-    private ObjectMapper getObjectMapper() {
+    private ObjectMapper getObjectMapper(List<String> tokenToFilter) {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.setVisibilityChecker(VisibilityChecker.Std.defaultInstance().withFieldVisibility(
                 JsonAutoDetect.Visibility.ANY));
         objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+        PropertyFilteringModule.Builder builder = PropertyFilteringModule.builder("Module Name");
+        for (String token : tokenToFilter) {
+            builder.exclude(Pattern.compile(token), token);
+        }
+        objectMapper.registerModule(builder.build());
         return objectMapper;
     }
 
     private void outputModelInJSON(final JspWriter out, final String debugModelAsJSON) throws IOException {
+
+        String stringToJSONify = debugModelAsJSON;
+        if (stringToJSONify != null && stringToJSONify.isEmpty()) {
+            stringToJSONify = null;
+        }
+        stringToJSONify = Objects.firstNonNull(stringToJSONify, "null");
+
         out.println(VAR + VAR_JS_ATTRIBUTE_VIEWER + " = " +
-                Objects.firstNonNull(debugModelAsJSON, "null").replaceAll(SINGLE_QUOTE, EMPTY) + ";");
+                stringToJSONify.replaceAll(SINGLE_QUOTE, EMPTY) + ";");
         out.println("(typeof console === \"undefined\")? {} : console.dir(" + VAR_JS_ATTRIBUTE_VIEWER + ");");
         out.println(SCRIPT_END);
     }

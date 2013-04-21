@@ -1,12 +1,12 @@
 package fr.figarocms.web.tag;
 
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
 import org.junit.Before;
 import org.junit.Test;
 
-public class DebugModelTagForSystemPropertySetToFalseOrNotSetTest extends AbstractDebugModelTagForSystemProperty {
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+public class DebugModelTagForSystemPropertySetToFalseOrNotSetTest extends AbstractDebugModelTagTest {
     @Before
     public void setUp() throws Exception {
         super.setUp();

@@ -13,7 +13,7 @@ import javax.servlet.http.HttpSession;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
-public abstract class AbstractDebugModelTagForSystemProperty {
+public abstract class AbstractDebugModelTagTest {
 
     @Spy
     protected DebugModelTag mockDebugModelTag = new DebugModelTag();
