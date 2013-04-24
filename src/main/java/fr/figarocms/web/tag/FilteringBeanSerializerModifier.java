@@ -4,11 +4,13 @@ import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.SerializationConfig;
 import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
 import com.fasterxml.jackson.databind.ser.BeanSerializerModifier;
-import com.google.common.collect.ImmutableCollection;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,40 +19,48 @@ import java.util.regex.Pattern;
  */
 public final class FilteringBeanSerializerModifier
         extends BeanSerializerModifier {
-    private final ImmutableMultimap<Pattern, String> filters;
+    private Pattern javaUtilLoggingPattern = Pattern.compile(".*java.util.logging.*");
+    private Pattern sunPattern = Pattern.compile(".*sun.*");
+    private Pattern objectPattern = Pattern.compile(".*java.lang.Object.*");
+    private Set<Pattern> filters = Sets.newHashSet(javaUtilLoggingPattern,sunPattern,objectPattern);
 
-    static FilteringBeanSerializerModifier excluding(ImmutableMultimap<Pattern, String> filters) {
+    private static Logger LOGGER = LoggerFactory.getLogger(FilteringBeanSerializerModifier.class);
+    static FilteringBeanSerializerModifier excluding(Set<Pattern> filters) {
         return new FilteringBeanSerializerModifier(filters);
     }
 
-    private FilteringBeanSerializerModifier(ImmutableMultimap<Pattern, String> filters) {
-        this.filters = filters;
+    private FilteringBeanSerializerModifier(Set<Pattern> filters) {
+        this.filters.addAll(filters);
     }
 
     @Override
     public List<BeanPropertyWriter> changeProperties(SerializationConfig config,
                                                      BeanDescription beanDesc, List<BeanPropertyWriter> beanProperties) {
-        if (filters == null || filters.size() == 0) return beanProperties;
+        if (filters == null || filters.isEmpty()) return beanProperties;
 
-        ImmutableCollection<String> filter = getFilterMatchingClassToExclude(beanDesc);
-        if (filter == null) return beanProperties;
 
-        List<BeanPropertyWriter> included = Lists.newArrayList();
-        for (BeanPropertyWriter property : beanProperties)
-            if (!filter.contains(property.getName()))
-                included.add(property);
+        Class<?> beanClass = beanDesc.getBeanClass();
+        LOGGER.debug("evaluating "+(beanClass +" class"));
+        boolean ignore = isExcluded(beanClass);
+        if (!ignore){
+            //no matching pattern have been found
+            //we don't remove beanProperties
+            return beanProperties;
+        }
+        LOGGER.debug("ignoring "+(beanClass +" class"));
 
-        return included;
+        return Lists.newArrayList();
     }
 
-    private ImmutableCollection<String> getFilterMatchingClassToExclude(BeanDescription beanDesc) {
-        for (Pattern pattern : filters.keySet()) {
-            String className = beanDesc.getBeanClass().getName();
-            Matcher matcher = pattern.matcher(className);
+
+
+    private boolean isExcluded(Class className) {
+        for (Pattern pattern : filters) {
+            Matcher matcher = pattern.matcher(className.getName());
             if(matcher.matches()){
-                return filters.get(pattern);
+                return true;
             }
         }
-        return null;
+        return false;
     }
 }

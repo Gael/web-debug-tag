@@ -2,8 +2,9 @@ package fr.figarocms.web.tag;
 
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.Module;
-import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Sets;
 
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -12,7 +13,7 @@ import java.util.regex.Pattern;
 public final class PropertyFilteringModule extends Module {
     private static final Version MODULE_VERSION = new Version(1, 0, 0, null);
     private final String moduleName;
-    private final ImmutableMultimap<Pattern, String> filters;
+    private final Set<Pattern> filters;
 
     public static Builder builder(String moduleName) {
         return new Builder(moduleName);
@@ -20,14 +21,14 @@ public final class PropertyFilteringModule extends Module {
 
     public static final class Builder {
         private final String moduleName;
-        private final ImmutableMultimap.Builder<Pattern, String> filterBuilder = new ImmutableMultimap.Builder<>();
+        private final Set<Pattern> filterBuilder = Sets.newHashSet();
 
         private Builder(String moduleName) {
             this.moduleName = moduleName;
         }
 
-        public Builder exclude(Pattern classPatternForExclusion, String name) {
-            filterBuilder.put(classPatternForExclusion, name);
+        public Builder exclude(Pattern classPatternForExclusion) {
+            filterBuilder.add(classPatternForExclusion);
             return this;
         }
 
@@ -38,7 +39,7 @@ public final class PropertyFilteringModule extends Module {
 
     private PropertyFilteringModule(Builder builder) {
         moduleName = builder.moduleName;
-        filters = builder.filterBuilder.build();
+        filters = builder.filterBuilder;
     }
 
     @Override

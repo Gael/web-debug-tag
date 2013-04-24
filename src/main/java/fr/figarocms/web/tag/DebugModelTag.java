@@ -166,7 +166,7 @@ public class DebugModelTag extends TagSupport {
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
         PropertyFilteringModule.Builder builder = PropertyFilteringModule.builder("Module Name");
         for (String token : tokenToFilter) {
-            builder.exclude(Pattern.compile(token), token);
+            builder.exclude(Pattern.compile(token));
         }
         objectMapper.registerModule(builder.build());
         return objectMapper;
