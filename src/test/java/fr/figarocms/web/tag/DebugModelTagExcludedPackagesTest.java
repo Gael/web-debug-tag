@@ -15,11 +15,11 @@ public class DebugModelTagExcludedPackagesTest extends AbstractDebugModelTagTest
 
 
     public static final String NO_ATTRIBUTES_SERIALIZED = "<script type=\"text/javascript\">\n" +
-            "var attributeViewer = null;\n" +
+            "var attributeViewer = {\"application\":{},\"session\":{\"dummySessionKey\":{}},\"page\":{},\"request\":{}};\n" +
             "(typeof console === \"undefined\")? {} : console.dir(attributeViewer);\n" +
             "</script>\n";
     public static final String DUMMY_VALUES_WITH_JAVA_UTIL_LOGGING_EXCLUSION = "<script type=\"text/javascript\">\n" +
-            "var attributeViewer = {\"application\":{\"javax.servlet.context.tempdir\":\"/tmp\"},\"session\":{\"dummySessionKey\":\"toto\",\"fsdf\":\"sdfsfd\"},\"page\":{},\"request\":{\"dsdfsdf\":{\"toto\":\"dummy value\",\"titi\":{\"dummyInteger\":8,\"map\":{\"test\":\"another dummy data\"}}}}};\n" +
+            "var attributeViewer = {\"application\":{\"javax.servlet.context.tempdir\":\"/tmp\"},\"session\":{\"dummySessionKey\":\"toto\",\"fsdf\":\"sdfsfd\"},\"page\":{},\"request\":{\"dsdfsdfq\":{},\"dsdfsdf\":{\"toto\":\"dummy value\",\"titi\":{\"dummyInteger\":8}}}};\n" +
             "(typeof console === \"undefined\")? {} : console.dir(attributeViewer);\n" +
             "</script>\n";
     public static final String JAVA_UTIL_LOGGING_PATTERN = "java.util.logging.*";
@@ -28,6 +28,17 @@ public class DebugModelTagExcludedPackagesTest extends AbstractDebugModelTagTest
             "var attributeViewer = {\"application\":{},\"session\":{\"dummySessionKey\":{\"toto\":\"dummy value\",\"titi\":{\"dummyInteger\":8,\"map\":{\"test\":\"another dummy data\"}}}},\"page\":{},\"request\":{}};\n" +
             "(typeof console === \"undefined\")? {} : console.dir(attributeViewer);\n" +
             "</script>\n";
+
+    public static final String EXPECTED_RESULT_WITH_ONLY_KEY = "<script type=\"text/javascript\">\n" +
+            "var attributeViewer = {\"application\":{},\"session\":{\"dummySessionKey\":{}},\"page\":{},\"request\":{}};\n" +
+            "(typeof console === \"undefined\")? {} : console.dir(attributeViewer);\n" +
+            "</script>\n";
+
+    public static final String EXPECTED_RESULT_WITH_KEY_AND_DUMMY_VALUE = "<script type=\"text/javascript\">\n" +
+            "var attributeViewer = {\"application\":{},\"session\":{\"dummySessionKey\":\"toto\"},\"page\":{},\"request\":{}};\n" +
+            "(typeof console === \"undefined\")? {} : console.dir(attributeViewer);\n" +
+            "</script>\n";
+
 
     @Before
     public void setUp() throws Exception {
@@ -44,7 +55,8 @@ public class DebugModelTagExcludedPackagesTest extends AbstractDebugModelTagTest
     @Test
     public void testExcludedPackagesWith_exclusion_from_the_package_of_the_object_included() throws JspException {
         //given
-        servletContext.addInitParameter(DebugModelTag.WEBDEBUG_EXCLUDES,"fr.figarocms.web.tag");
+        servletContext.addInitParameter(DebugModelTag.WEBDEBUG_EXCLUDES,"fr.figarocms.web.tag.*");
+        cleanServletContextAttributes();
         session.setAttribute("dummySessionKey",this);
         //when
         mockDebugModelTag.doStartTag();
@@ -83,7 +95,7 @@ public class DebugModelTagExcludedPackagesTest extends AbstractDebugModelTagTest
         //when
         mockDebugModelTag.doStartTag();
         //then
-        assertThat(new String(pageContext.getContentAsByteArray())).isEqualTo(EXPECTED_RESULT_WITH_KEY_AND_VALUE_AS_STRING);
+        assertThat(new String(pageContext.getContentAsByteArray())).isEqualTo(EXPECTED_RESULT_WITH_KEY_AND_DUMMY_VALUE);
     }
 
 
@@ -100,7 +112,7 @@ public class DebugModelTagExcludedPackagesTest extends AbstractDebugModelTagTest
         //when
         mockDebugModelTag.doStartTag();
         //then
-        assertThat(new String(pageContext.getContentAsByteArray())).isEqualTo(EXPECTED_RESULT_WITH_KEY_AND_VALUE_AS_STRING);
+        assertThat(new String(pageContext.getContentAsByteArray())).isEqualTo(EXPECTED_RESULT_WITH_ONLY_KEY);
     }
 
     @Test
