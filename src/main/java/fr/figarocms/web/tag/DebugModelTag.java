@@ -28,24 +28,24 @@ import java.util.regex.Pattern;
 public class DebugModelTag extends TagSupport {
     private static final long serialVersionUID = 4611181048692549740L;
 
-    public static final String SCRIPT_TYPE_TEXT_JAVASCRIPT_START = "<script type=\"text/javascript\">";
+    private static final String SCRIPT_TYPE_TEXT_JAVASCRIPT_START = "<script type=\"text/javascript\">";
 
-    public static final String SCRIPT_END = "</script>";
+    private static final String SCRIPT_END = "</script>";
 
     /**
      * Property -Ddebug.jsp = true à  to set in JVM variables at launch.
      */
-    public static final String DEBUG_JSP_FLAG = "debug.jsp";
+    private static final String DEBUG_JSP_FLAG = "debug.jsp";
 
-    public static final String SINGLE_QUOTE = "'";
+    private static final String SINGLE_QUOTE = "'";
 
-    public static final String EMPTY = "";
+    private static final String EMPTY = "";
 
-    public static final String VAR_JS_ATTRIBUTE_VIEWER = "attributeViewer";
+    private static final String VAR_JS_ATTRIBUTE_VIEWER = "attributeViewer";
 
-    public static final String VAR = "var ";
+    private static final String VAR = "var ";
 
-    public static final String STRING_CLASS_NAME = "java.lang.String";
+    private static final String STRING_CLASS_NAME = "java.lang.String";
 
     public static final String WEBDEBUG_EXCLUDES = "webdebug.excludes";
 
@@ -71,14 +71,6 @@ public class DebugModelTag extends TagSupport {
             Arrays.asList(PageContext.PAGE_SCOPE, PageContext.SESSION_SCOPE, PageContext.REQUEST_SCOPE, PageContext.APPLICATION_SCOPE));
 
 
-    private Map<String, Object> debugModel = Maps.newHashMap();
-
-    private Map<String, Object> debugPage = Maps.newHashMap();
-    private Map<String, Object> debugRequest = Maps.newHashMap();
-    private Map<String, Object> debugSession = Maps.newHashMap();
-    private Map<String, Object> debugApplication = Maps.newHashMap();
-
-
     @Override
     public int doStartTag() throws JspException {
 
@@ -95,66 +87,85 @@ public class DebugModelTag extends TagSupport {
         JspWriter out = pageContext.getOut();
 
         try {
-            out.println(SCRIPT_TYPE_TEXT_JAVASCRIPT_START);
-            String packagesToExclude = pageContext.getServletContext().getInitParameter(WEBDEBUG_EXCLUDES);
-            List<String> tokenToFilter = Lists.newArrayList();
-            if (packagesToExclude != null) {
-                tokenToFilter = Arrays.asList(packagesToExclude.split(EXCLUDE_PACKAGE_SEPARATOR));
-            }
-
-            for (Integer scope : SCOPES) {
-                Enumeration attributeNames = pageContext.getAttributeNamesInScope(scope);
-
-                while (attributeNames != null && attributeNames.hasMoreElements()) {
-                    String element = attributeNames.nextElement().toString();
-                    Object attribute = null;
-
-                    if (element != null) {
-
-                        if (scope == PageContext.PAGE_SCOPE) {
-                            attribute = pageContext.getAttribute(element);
-                            if (attribute != null) {
-                                addAttributeToMap(element, attribute, debugPage);
-                            }
-                        } else if (scope == PageContext.REQUEST_SCOPE) {
-                            attribute = pageContext.getRequest().getAttribute(element);
-                            if (attribute != null) {
-                                addAttributeToMap(element, attribute, debugRequest);
-                            }
-                        } else if (scope == PageContext.SESSION_SCOPE) {
-                            final HttpSession session = pageContext.getSession();
-                            if (session != null) {
-                                attribute = session.getAttribute(element);
-                            }
-                            if (attribute != null) {
-                                addAttributeToMap(element, attribute, debugSession);
-                            }
-                        } else if (scope == PageContext.APPLICATION_SCOPE) {
-                            attribute = pageContext.getServletContext().getAttribute(element);
-                            if (attribute != null) {
-                                addAttributeToMap(element, attribute, debugApplication);
-                            }
-                        }
-                    }
-                }
-            }
-
-            debugModel.put(PAGE_REQUEST_KEY, debugPage);
-            debugModel.put(REQUEST_MODEL_KEY, debugRequest);
-            debugModel.put(SESSION_MODEL_KEY, debugSession);
-            debugModel.put(APPLICATION_MODEL_KEY, debugApplication);
-            ObjectMapper objectMapper = getObjectMapper(tokenToFilter);
-            String debugModelAsJSON = null;
-            try {
-                debugModelAsJSON = objectMapper.writeValueAsString(debugModel);
-            } catch (Throwable t) {
-                LOGGER.error("error in debugModel serialization in JSON", t);
-            }
-            outputModelInJSON(out, debugModelAsJSON);
+            List<String> classesToExclude = getClassesToExcludes();
+            Map<String, Object> debugModel = buildMapOfAttributesToSerialize(pageContext);
+            String debugModelAsJSON = ToJSON(classesToExclude, debugModel);
+            printStringWithJSPWriter(out, debugModelAsJSON);
         } catch (IOException e) {
             throw new JspException("IOException while writing data to page" + e.getMessage(), e);
         }
 
+    }
+
+    private List<String> getClassesToExcludes() {
+        String packagesToExclude = pageContext.getServletContext().getInitParameter(WEBDEBUG_EXCLUDES);
+        List<String> classesToExclude = Lists.newArrayList();
+        if (packagesToExclude != null) {
+            classesToExclude = Arrays.asList(packagesToExclude.split(EXCLUDE_PACKAGE_SEPARATOR));
+        }
+        return classesToExclude;
+    }
+
+    private String ToJSON(List<String> tokenToFilter, Map<String, Object> debugModel) {
+        ObjectMapper objectMapper = getObjectMapper(tokenToFilter);
+        String debugModelAsJSON = null;
+        try {
+            debugModelAsJSON = objectMapper.writeValueAsString(debugModel);
+        } catch (Throwable t) {
+            LOGGER.error("error in debugModel serialization in JSON", t);
+        }
+        return debugModelAsJSON;
+    }
+
+    private Map<String, Object> buildMapOfAttributesToSerialize(PageContext pageContext) {
+        Map<String, Object> debugPage = Maps.newHashMap();
+        Map<String, Object> debugRequest = Maps.newHashMap();
+        Map<String, Object> debugSession = Maps.newHashMap();
+        Map<String, Object> debugApplication = Maps.newHashMap();
+        Map<String, Object> debugModel = Maps.newHashMap();
+
+        for (Integer scope : SCOPES) {
+            Enumeration attributeNames = pageContext.getAttributeNamesInScope(scope);
+
+            while (attributeNames != null && attributeNames.hasMoreElements()) {
+                String element = attributeNames.nextElement().toString();
+                Object attribute = null;
+
+                if (element != null) {
+
+                    if (scope == PageContext.PAGE_SCOPE) {
+                        attribute = pageContext.getAttribute(element);
+                        if (attribute != null) {
+                            addAttributeToMap(element, attribute, debugPage);
+                        }
+                    } else if (scope == PageContext.REQUEST_SCOPE) {
+                        attribute = pageContext.getRequest().getAttribute(element);
+                        if (attribute != null) {
+                            addAttributeToMap(element, attribute, debugRequest);
+                        }
+                    } else if (scope == PageContext.SESSION_SCOPE) {
+                        final HttpSession session = pageContext.getSession();
+                        if (session != null) {
+                            attribute = session.getAttribute(element);
+                        }
+                        if (attribute != null) {
+                            addAttributeToMap(element, attribute, debugSession);
+                        }
+                    } else if (scope == PageContext.APPLICATION_SCOPE) {
+                        attribute = pageContext.getServletContext().getAttribute(element);
+                        if (attribute != null) {
+                            addAttributeToMap(element, attribute, debugApplication);
+                        }
+                    }
+                }
+            }
+        }
+        debugModel.put(PAGE_REQUEST_KEY, debugPage);
+        debugModel.put(REQUEST_MODEL_KEY, debugRequest);
+        debugModel.put(SESSION_MODEL_KEY, debugSession);
+        debugModel.put(APPLICATION_MODEL_KEY, debugApplication);
+
+        return debugModel;
     }
 
     private ObjectMapper getObjectMapper(List<String> tokenToFilter) {
@@ -175,8 +186,8 @@ public class DebugModelTag extends TagSupport {
         return objectMapper;
     }
 
-    private void outputModelInJSON(final JspWriter out, final String debugModelAsJSON) throws IOException {
-
+    private void printStringWithJSPWriter(final JspWriter out, final String debugModelAsJSON) throws IOException {
+        out.println(SCRIPT_TYPE_TEXT_JAVASCRIPT_START);
         String stringToJSONify = debugModelAsJSON;
         if (stringToJSONify != null && stringToJSONify.isEmpty()) {
             stringToJSONify = null;
@@ -197,15 +208,4 @@ public class DebugModelTag extends TagSupport {
         }
     }
 
-    private boolean ignoredPackage(final String element, final List<String> tokenToFilter) {
-        boolean isIgnored = false;
-        for (String packageIgnored : tokenToFilter) {
-            if (isIgnored) {
-                return isIgnored;
-            }
-            isIgnored = element.startsWith(packageIgnored);
-        }
-
-        return isIgnored;
-    }
 }
