@@ -89,7 +89,7 @@ public class DebugModelTag extends TagSupport {
         try {
             List<String> classesToExclude = getClassesToExcludes();
             Map<String, Object> debugModel = buildMapOfAttributesToSerialize(pageContext);
-            String debugModelAsJSON = ToJSON(classesToExclude, debugModel);
+            String debugModelAsJSON = toJSON(classesToExclude, debugModel);
             printStringWithJSPWriter(out, debugModelAsJSON);
         } catch (IOException e) {
             throw new JspException("IOException while writing data to page" + e.getMessage(), e);
@@ -106,7 +106,7 @@ public class DebugModelTag extends TagSupport {
         return classesToExclude;
     }
 
-    private String ToJSON(List<String> tokenToFilter, Map<String, Object> debugModel) {
+    private String toJSON(List<String> tokenToFilter, Map<String, Object> debugModel) {
         ObjectMapper objectMapper = getObjectMapper(tokenToFilter);
         String debugModelAsJSON = null;
         try {
