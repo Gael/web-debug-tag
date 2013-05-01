@@ -88,7 +88,7 @@ public class DebugModelTag extends TagSupport {
         LOGGER.info("to exclude some classes from serialization (if some JSONMappingException are thrown), put in your web.xml this context param markup for example:");
         LOGGER.info(" <context-param>");
         LOGGER.info("<param-name>webdebug.excludes</param-name>");
-        LOGGER.info("<param-value>__spring*,__sitemesh*</param-name>");
+        LOGGER.info("<param-value>__spring.*,__sitemesh.*,org.apache.jasper.*,org.apache.catalina.*,org.eclipse.jetty.webapp.Context,org.eclipse.jetty.server.*,org.eclipse.jetty.servlet.*,org.eclipse.jetty.webapp.*</param-name>");
         LOGGER.info("</context-param>");
     }
 

@@ -13,7 +13,7 @@ Tag dumping attributes of page, session, requests and application as JSON into c
    <dependency>
       <groupId>fr.figarocms</group>
       <artifactId>web-debug-tag</artifactId>
-      <version>1.4</version>
+      <version>1.5</version>
    </dependency>
 
 ```
@@ -34,7 +34,7 @@ Tag dumping attributes of page, session, requests and application as JSON into c
 - Add in your web.xml, min 1 filter.
    <context-param>
       <param-name>webdebug.excludes</param-name>
-      <param-value>org.*,com.*,__spring*,__sitemesh*</param-value>
+      <param-value>__spring.*,__sitemesh.*,org.apache.jasper.*,org.apache.catalina.*,org.eclipse.jetty.webapp.Context,org.eclipse.jetty.server.*,org.eclipse.jetty.servlet.*,org.eclipse.jetty.webapp.*</param-value>
    </context-param> 
   
 
