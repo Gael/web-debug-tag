@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
+import com.google.common.base.CharMatcher;
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
@@ -110,7 +111,7 @@ public class DebugModelTag extends TagSupport {
         String packagesToExclude = pageContext.getServletContext().getInitParameter(WEBDEBUG_EXCLUDES);
         List<String> classesToExclude = Lists.newArrayList();
         if (packagesToExclude != null) {
-            classesToExclude = Arrays.asList(packagesToExclude.split(EXCLUDE_PACKAGE_SEPARATOR));
+            classesToExclude = Arrays.asList(CharMatcher.WHITESPACE.removeFrom(packagesToExclude).split(EXCLUDE_PACKAGE_SEPARATOR));
         }
         return classesToExclude;
     }
