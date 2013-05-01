@@ -23,6 +23,7 @@ Tag dumping attributes of page, session, requests and application as JSON into c
 ```
 
 - you can download it here  https://oss.sonatype.org/ find web-debug-tag.
+or grab it from [apache maven central repository](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22web-debug-tag%22)
 
 ```
 
