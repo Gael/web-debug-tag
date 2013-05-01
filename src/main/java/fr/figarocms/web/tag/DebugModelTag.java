@@ -38,6 +38,7 @@ public class DebugModelTag extends TagSupport {
      * Property -Ddebug.jsp = true à  to set in JVM variables at launch.
      */
     private static final String DEBUG_JSP_FLAG = "debug.jsp";
+    public static final String DISABLE_TAG_INSTRUCTION = "to disable this tag, remove the command line '-D" + DEBUG_JSP_FLAG + "' argument of your application server ";
 
     private static final String SINGLE_QUOTE = "'";
 
@@ -64,6 +65,7 @@ public class DebugModelTag extends TagSupport {
 
 
     private static final String DUMMY_MODULE_NAME = "Module Name";
+    public static final String SECURITY_WARNING_WHEN_WEB_DEBUG_TAG_IS_ACTIVATED = "web debug tag is enabled. do NOT activate this tag on PRODUCTION to avoid SECURITY ISSUES! ";
 
     private ObjectMapper objectMapper;
 
@@ -72,10 +74,21 @@ public class DebugModelTag extends TagSupport {
     public int doStartTag() throws JspException {
 
         if (DEBUG_FLAG) {
+            LOGGER.info(SECURITY_WARNING_WHEN_WEB_DEBUG_TAG_IS_ACTIVATED);
+            LOGGER.info(DISABLE_TAG_INSTRUCTION);
+            logInstructionsToExcludeFromSerializationSomeClasses();
             outputDebugModelInJSON();
         }
 
         return SKIP_BODY;
+    }
+
+    private void logInstructionsToExcludeFromSerializationSomeClasses() {
+        LOGGER.info("to exclude some classes from serialization (if some JSONMappingException are thrown), put in your web.xml this context param markup for example:");
+        LOGGER.info(" <context-param>");
+        LOGGER.info("<param-name>webdebug.excludes</param-name>");
+        LOGGER.info("<param-value>__spring*,__sitemesh*</param-name>");
+        LOGGER.info("</context-param>");
     }
 
     protected void outputDebugModelInJSON() throws JspException {
