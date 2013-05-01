@@ -34,7 +34,7 @@ Tag dumping attributes of page, session, requests and application as JSON into c
 - Add in your web.xml, min 1 filter.
    <context-param>
       <param-name>webdebug.excludes</param-name>
-      <param-value>org.,com.,__spring,__sitemesh</param-value>
+      <param-value>org.*,com.*,__spring*,__sitemesh*</param-value>
    </context-param> 
   
 
