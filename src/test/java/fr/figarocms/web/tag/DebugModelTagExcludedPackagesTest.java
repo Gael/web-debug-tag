@@ -11,31 +11,27 @@ import java.util.regex.Pattern;
 
 import static org.fest.assertions.Assertions.assertThat;
 
-public class DebugModelTagExcludedPackagesTest extends AbstractDebugModelTagTest{
+public class DebugModelTagExcludedPackagesTest extends AbstractDebugModelTagTest {
 
 
     public static final String NO_ATTRIBUTES_SERIALIZED = "<script type=\"text/javascript\">\n" +
-            "var attributeViewer = {\"application\":{},\"session\":{\"dummySessionKey\":{}},\"page\":{},\"request\":{}};\n" +
+            "var attributeViewer = {\"application\":{},\"page\":{},\"session\":{\"dummySessionKey\":{}},\"request\":{}};\n" +
             "(typeof console === \"undefined\")? {} : console.dir(attributeViewer);\n" +
             "</script>\n";
     public static final String DUMMY_VALUES_WITH_JAVA_UTIL_LOGGING_EXCLUSION = "<script type=\"text/javascript\">\n" +
-            "var attributeViewer = {\"application\":{\"javax.servlet.context.tempdir\":\"/tmp\"},\"session\":{\"dummySessionKey\":\"toto\",\"fsdf\":\"sdfsfd\"},\"page\":{},\"request\":{\"dsdfsdfq\":{},\"dsdfsdf\":{\"toto\":\"dummy value\",\"titi\":{\"dummyInteger\":8}}}};\n" +
+            "var attributeViewer = {\"application\":{\"javax.servlet.context.tempdir\":\"/tmp\"},\"page\":{},\"session\":{\"dummySessionKey\":\"toto\",\"fsdf\":\"sdfsfd\"},\"request\":{\"dsdfsdfq\":{},\"dsdfsdf\":{\"toto\":\"dummy value\",\"titi\":{\"dummyInteger\":8}}}};\n" +
             "(typeof console === \"undefined\")? {} : console.dir(attributeViewer);\n" +
             "</script>\n";
     public static final String JAVA_UTIL_LOGGING_PATTERN = "java.util.logging.*";
     public static final String TEST_CLASS_PATTERN = "fr.figarocms.web.tag.Test";
-    public static final String EXPECTED_RESULT_WITH_KEY_AND_VALUE_AS_STRING = "<script type=\"text/javascript\">\n" +
-            "var attributeViewer = {\"application\":{},\"session\":{\"dummySessionKey\":{\"toto\":\"dummy value\",\"titi\":{\"dummyInteger\":8,\"map\":{\"test\":\"another dummy data\"}}}},\"page\":{},\"request\":{}};\n" +
-            "(typeof console === \"undefined\")? {} : console.dir(attributeViewer);\n" +
-            "</script>\n";
 
     public static final String EXPECTED_RESULT_WITH_ONLY_KEY = "<script type=\"text/javascript\">\n" +
-            "var attributeViewer = {\"application\":{},\"session\":{\"dummySessionKey\":{}},\"page\":{},\"request\":{}};\n" +
+            "var attributeViewer = {\"application\":{},\"page\":{},\"session\":{\"dummySessionKey\":{}},\"request\":{}};\n" +
             "(typeof console === \"undefined\")? {} : console.dir(attributeViewer);\n" +
             "</script>\n";
 
     public static final String EXPECTED_RESULT_WITH_KEY_AND_DUMMY_VALUE = "<script type=\"text/javascript\">\n" +
-            "var attributeViewer = {\"application\":{},\"session\":{\"dummySessionKey\":\"toto\"},\"page\":{},\"request\":{}};\n" +
+            "var attributeViewer = {\"application\":{},\"page\":{},\"session\":{\"dummySessionKey\":\"toto\"},\"request\":{}};\n" +
             "(typeof console === \"undefined\")? {} : console.dir(attributeViewer);\n" +
             "</script>\n";
 
@@ -43,7 +39,7 @@ public class DebugModelTagExcludedPackagesTest extends AbstractDebugModelTagTest
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        pageContext = new MockPageContext(servletContext,request,response);
+        pageContext = new MockPageContext(servletContext, request, response);
         mockDebugModelTag = new DebugModelTag();
         mockDebugModelTag.setPageContext(pageContext);
         overrideConstantField(field, true);
@@ -51,13 +47,12 @@ public class DebugModelTagExcludedPackagesTest extends AbstractDebugModelTagTest
     }
 
 
-
     @Test
     public void testExcludedPackagesWith_exclusion_from_the_package_of_the_object_included() throws JspException {
         //given
-        servletContext.addInitParameter(DebugModelTag.WEBDEBUG_EXCLUDES,"fr.figarocms.web.tag.*");
+        servletContext.addInitParameter(DebugModelTag.WEBDEBUG_EXCLUDES, "fr.figarocms.web.tag.*");
         cleanServletContextAttributes();
-        session.setAttribute("dummySessionKey",this);
+        session.setAttribute("dummySessionKey", this);
         //when
         mockDebugModelTag.doStartTag();
         //then
@@ -70,9 +65,9 @@ public class DebugModelTagExcludedPackagesTest extends AbstractDebugModelTagTest
         //given
         servletContext.addInitParameter(DebugModelTag.WEBDEBUG_EXCLUDES, JAVA_UTIL_LOGGING_PATTERN);
         session.setAttribute("dummySessionKey", "toto");
-        request.setAttribute("dsdfsdf",new fr.figarocms.web.tag.Test());
-        request.setAttribute("dsdfsdfq",this);
-        pageContext.setAttribute("fsdf","sdfsfd",3);
+        request.setAttribute("dsdfsdf", new fr.figarocms.web.tag.Test());
+        request.setAttribute("dsdfsdfq", this);
+        pageContext.setAttribute("fsdf", "sdfsfd", 3);
         mockDebugModelTag = new DebugModelTag();
         mockDebugModelTag.setPageContext(pageContext);
 
@@ -116,7 +111,7 @@ public class DebugModelTagExcludedPackagesTest extends AbstractDebugModelTagTest
     }
 
     @Test
-    public void testRegexp(){
+    public void testRegexp() {
         Pattern compile = Pattern.compile(".*sun.*");
         Matcher matcher = compile.matcher("sun.nio.cs.StreamEncoder");
         Matcher matcher2 = compile.matcher("sun.misc.AppClassLoader[\"parent\"]");
@@ -130,7 +125,7 @@ public class DebugModelTagExcludedPackagesTest extends AbstractDebugModelTagTest
     private void cleanServletContextAttributes() {
         Enumeration<String> attributeNames = servletContext.getAttributeNames();
 
-        while(attributeNames.hasMoreElements()){
+        while (attributeNames.hasMoreElements()) {
             servletContext.removeAttribute(attributeNames.nextElement());
         }
     }

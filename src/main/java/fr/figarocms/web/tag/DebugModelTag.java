@@ -7,13 +7,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.introspect.VisibilityChecker;
 import com.google.common.base.Objects;
+import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import fr.figarocms.web.tag.scopes.Scope;
+import fr.figarocms.web.tag.scopes.Scopes;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.JspWriter;
 import javax.servlet.jsp.PageContext;
@@ -49,13 +51,6 @@ public class DebugModelTag extends TagSupport {
 
     public static final String WEBDEBUG_EXCLUDES = "webdebug.excludes";
 
-    private static final String PAGE_REQUEST_KEY = "page";
-
-    private static final String REQUEST_MODEL_KEY = "request";
-
-    private static final String SESSION_MODEL_KEY = "session";
-
-    private static final String APPLICATION_MODEL_KEY = "application";
 
     private static final String EXCLUDE_PACKAGE_SEPARATOR = ",";
 
@@ -67,15 +62,16 @@ public class DebugModelTag extends TagSupport {
     private static final boolean DEBUG_FLAG =
             (DEBUG_JVM_PARAMETER != null) && Boolean.parseBoolean(DEBUG_JVM_PARAMETER);
 
-    private static final List<Integer> SCOPES = Lists.newArrayList(
-            Arrays.asList(PageContext.PAGE_SCOPE, PageContext.SESSION_SCOPE, PageContext.REQUEST_SCOPE, PageContext.APPLICATION_SCOPE));
+
+    private static final String DUMMY_MODULE_NAME = "Module Name";
+
+    private ObjectMapper objectMapper;
 
 
     @Override
     public int doStartTag() throws JspException {
 
-        boolean debugOk = DEBUG_FLAG;
-        if (debugOk) {
+        if (DEBUG_FLAG) {
             outputDebugModelInJSON();
         }
 
@@ -107,7 +103,9 @@ public class DebugModelTag extends TagSupport {
     }
 
     private String toJSON(List<String> tokenToFilter, Map<String, Object> debugModel) {
-        ObjectMapper objectMapper = getObjectMapper(tokenToFilter);
+        if (objectMapper == null) {
+            objectMapper = getObjectMapper(tokenToFilter);
+        }
         String debugModelAsJSON = null;
         try {
             debugModelAsJSON = objectMapper.writeValueAsString(debugModel);
@@ -118,52 +116,20 @@ public class DebugModelTag extends TagSupport {
     }
 
     private Map<String, Object> buildMapOfAttributesToSerialize(PageContext pageContext) {
-        Map<String, Object> debugPage = Maps.newHashMap();
-        Map<String, Object> debugRequest = Maps.newHashMap();
-        Map<String, Object> debugSession = Maps.newHashMap();
-        Map<String, Object> debugApplication = Maps.newHashMap();
         Map<String, Object> debugModel = Maps.newHashMap();
 
-        for (Integer scope : SCOPES) {
-            Enumeration attributeNames = pageContext.getAttributeNamesInScope(scope);
-
+        for (Scopes scopes : Scopes.values()) {
+            Scope scopeItem = scopes.getScope();
+            Enumeration attributeNames = pageContext.getAttributeNamesInScope(scopeItem.getScopeIdentifier());
+            Map<String, Object> model = Maps.newHashMap();
             while (attributeNames != null && attributeNames.hasMoreElements()) {
-                String element = attributeNames.nextElement().toString();
-                Object attribute = null;
-
-                if (element != null) {
-
-                    if (scope == PageContext.PAGE_SCOPE) {
-                        attribute = pageContext.getAttribute(element);
-                        if (attribute != null) {
-                            addAttributeToMap(element, attribute, debugPage);
-                        }
-                    } else if (scope == PageContext.REQUEST_SCOPE) {
-                        attribute = pageContext.getRequest().getAttribute(element);
-                        if (attribute != null) {
-                            addAttributeToMap(element, attribute, debugRequest);
-                        }
-                    } else if (scope == PageContext.SESSION_SCOPE) {
-                        final HttpSession session = pageContext.getSession();
-                        if (session != null) {
-                            attribute = session.getAttribute(element);
-                        }
-                        if (attribute != null) {
-                            addAttributeToMap(element, attribute, debugSession);
-                        }
-                    } else if (scope == PageContext.APPLICATION_SCOPE) {
-                        attribute = pageContext.getServletContext().getAttribute(element);
-                        if (attribute != null) {
-                            addAttributeToMap(element, attribute, debugApplication);
-                        }
-                    }
-                }
+                Optional<String> attributeName = Optional.fromNullable(attributeNames.nextElement().toString());
+                Optional<Object> attributeValue = scopeItem.getAttributeValue(pageContext, attributeName);
+                addAttributeToMap(attributeName, attributeValue, model);
             }
+            debugModel.put(scopes.getKey(), model);
         }
-        debugModel.put(PAGE_REQUEST_KEY, debugPage);
-        debugModel.put(REQUEST_MODEL_KEY, debugRequest);
-        debugModel.put(SESSION_MODEL_KEY, debugSession);
-        debugModel.put(APPLICATION_MODEL_KEY, debugApplication);
+
 
         return debugModel;
     }
@@ -175,7 +141,7 @@ public class DebugModelTag extends TagSupport {
         objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-        PropertyFilteringModule.Builder builder = PropertyFilteringModule.builder("Module Name");
+        PropertyFilteringModule.Builder builder = PropertyFilteringModule.builder(DUMMY_MODULE_NAME);
         for (String token : tokenToFilter) {
             builder.exclude(Pattern.compile(token));
         }
@@ -200,11 +166,14 @@ public class DebugModelTag extends TagSupport {
         out.println(SCRIPT_END);
     }
 
-    private void addAttributeToMap(final String element, final Object attribute, Map<String, Object> map) {
-        if (attribute.getClass().getCanonicalName().equals(STRING_CLASS_NAME)) {
-            map.put(element, StringEscapeUtils.escapeHtml(attribute.toString()));
+    private void addAttributeToMap(final Optional<String> attributeName, final Optional<Object> attributeValue, Map<String, Object> map) {
+        if (!attributeName.isPresent() || !attributeValue.isPresent()) {
+            return;
+        }
+        if (attributeValue.getClass().getCanonicalName().equals(STRING_CLASS_NAME)) {
+            map.put(attributeName.get(), StringEscapeUtils.escapeHtml(attributeValue.get().toString()));
         } else {
-            map.put(element, attribute);
+            map.put(attributeName.get(), attributeValue.get());
         }
     }
 

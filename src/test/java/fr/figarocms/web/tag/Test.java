@@ -4,8 +4,8 @@ import com.google.common.collect.Maps;
 
 import java.util.Map;
 
-public class Test{
-    private String toto="dummy value";
+public class Test {
+    private String toto = "dummy value";
 
     public Titi getTiti() {
         return titi;
@@ -22,7 +22,7 @@ public class Test{
         private Map map = Maps.newHashMap();
 
         private Titi() {
-            map.put("test","another dummy data");
+            map.put("test", "another dummy data");
         }
 
         public Integer getDummyInteger() {

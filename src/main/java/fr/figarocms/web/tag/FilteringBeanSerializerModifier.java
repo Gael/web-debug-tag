@@ -22,9 +22,10 @@ public final class FilteringBeanSerializerModifier
     private Pattern javaUtilLoggingPattern = Pattern.compile(".*java.util.logging.*");
     private Pattern sunPattern = Pattern.compile(".*sun.*");
     private Pattern objectPattern = Pattern.compile(".*java.lang.Object.*");
-    private Set<Pattern> filters = Sets.newHashSet(javaUtilLoggingPattern,sunPattern,objectPattern);
+    private Set<Pattern> filters = Sets.newHashSet(javaUtilLoggingPattern, sunPattern, objectPattern);
 
     private static Logger LOGGER = LoggerFactory.getLogger(FilteringBeanSerializerModifier.class);
+
     static FilteringBeanSerializerModifier excluding(Set<Pattern> filters) {
         return new FilteringBeanSerializerModifier(filters);
     }
@@ -40,24 +41,23 @@ public final class FilteringBeanSerializerModifier
 
 
         Class<?> beanClass = beanDesc.getBeanClass();
-        LOGGER.debug("evaluating "+(beanClass +" class"));
+        LOGGER.debug("evaluating " + (beanClass + " class"));
         boolean ignore = isExcluded(beanClass);
-        if (!ignore){
+        if (!ignore) {
             //no matching pattern have been found
             //we don't remove beanProperties
             return beanProperties;
         }
-        LOGGER.debug("ignoring "+(beanClass +" class"));
+        LOGGER.debug("ignoring " + (beanClass + " class"));
 
         return Lists.newArrayList();
     }
 
 
-
     private boolean isExcluded(Class className) {
         for (Pattern pattern : filters) {
             Matcher matcher = pattern.matcher(className.getName());
-            if(matcher.matches()){
+            if (matcher.matches()) {
                 return true;
             }
         }
