@@ -16,9 +16,9 @@ class SessionScope extends Scope {
     public Optional<Object> getAttributeValue(PageContext pageContext, Optional<String> attributeName) {
         Object attributeValue = null;
 
-        final HttpSession session = pageContext.getSession();
-        if (session != null) {
-            attributeValue = session.getAttribute(attributeName.or(EMPTY_ATTRIBUTE_NAME));
+        final Optional<HttpSession> session = Optional.fromNullable(pageContext.getSession());
+        if (session.isPresent()) {
+            attributeValue = session.get().getAttribute(attributeName.or(EMPTY_ATTRIBUTE_NAME));
         }
         return Optional.fromNullable(attributeValue);
     }
