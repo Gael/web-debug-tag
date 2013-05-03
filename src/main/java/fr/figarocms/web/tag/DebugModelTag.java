@@ -75,13 +75,16 @@ public class DebugModelTag extends TagSupport {
     public int doStartTag() throws JspException {
 
         if (DEBUG_FLAG) {
-            LOGGER.info(SECURITY_WARNING_WHEN_WEB_DEBUG_TAG_IS_ACTIVATED);
-            LOGGER.info(DISABLE_TAG_INSTRUCTION);
-            logInstructionsToExcludeFromSerializationSomeClasses();
             outputDebugModelInJSON();
         }
 
         return SKIP_BODY;
+    }
+
+    private void logInstructions() {
+        LOGGER.info(SECURITY_WARNING_WHEN_WEB_DEBUG_TAG_IS_ACTIVATED);
+        LOGGER.info(DISABLE_TAG_INSTRUCTION);
+        logInstructionsToExcludeFromSerializationSomeClasses();
     }
 
     private void logInstructionsToExcludeFromSerializationSomeClasses() {
@@ -118,6 +121,7 @@ public class DebugModelTag extends TagSupport {
 
     private String toJSON(List<String> tokenToFilter, Map<String, Object> debugModel) {
         if (objectMapper == null) {
+            logInstructions();
             objectMapper = getObjectMapper(tokenToFilter);
         }
         String debugModelAsJSON = null;
