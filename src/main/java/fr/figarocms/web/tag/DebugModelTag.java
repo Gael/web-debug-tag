@@ -159,6 +159,7 @@ public class DebugModelTag extends TagSupport {
         objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
+
         PropertyFilteringModule.Builder builder = PropertyFilteringModule.builder(DUMMY_MODULE_NAME);
         for (String token : tokenToFilter) {
             builder.exclude(Pattern.compile(token));
@@ -188,7 +189,7 @@ public class DebugModelTag extends TagSupport {
         if (!attributeName.isPresent() || !attributeValue.isPresent()) {
             return;
         }
-        if (attributeValue.getClass().getCanonicalName().equals(STRING_CLASS_NAME)) {
+        if (attributeValue.get().getClass().getCanonicalName().equals(STRING_CLASS_NAME)) {
             map.put(attributeName.get(), StringEscapeUtils.escapeHtml(attributeValue.get().toString()));
         } else {
             map.put(attributeName.get(), attributeValue.get());
